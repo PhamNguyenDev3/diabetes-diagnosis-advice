@@ -63,8 +63,7 @@ This application uses a machine learning model to predict the likelihood of diab
     ├── static/
     │   └── style.css
     ├── templates/
-    │   ├── index.html
-    │   └── index7.html
+    │   └── index.html
     ├── app.py
     ├── api_client.py
     ├── requirements.txt

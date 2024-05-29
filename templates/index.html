@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chẩn đoán bệnh tiểu đường</title>
+        <link rel="stylesheet" href="../static/style.css" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <div class="result-section">
+                <div class="info-section">
+                    <h2>Giới thiệu</h2>
+                    <p>
+                        Ứng dụng này sử dụng mô hình học máy để dự đoán khả năng
+                        mắc bệnh tiểu đường dựa trên các chỉ số sức khỏe cá
+                        nhân.
+                    </p>
+                    <div class="progress-container-label">
+                        <b class="box"></b>
+                    </div>
+
+                    <img
+                        src="https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2023/1/4/diabetesshare-1672803888423-16728038890891330965073.jpg"
+                        alt="Illustration"
+                        class="illustration"
+                    />
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-circle" id="progress-circle">
+                        <span id="progress-text">0%</span>
+                    </div>
+                </div>
+                <div class="progress-container-label">
+                    <b class="box"></b>
+                </div>
+                <div id="advice-section">
+                    <button id="get-advice-btn" disabled>
+                        Lời khuyên từ trợ lý ảo
+                    </button>
+                    <div class="advice-box" style="display: none"></div>
+                </div>
+            </div>
+            <div class="form-section">
+                <h1>Form chẩn đoán bệnh tiểu đường</h1>
+                <form id="diagnosis-form" method="POST">
+                    <div class="form-group">
+                        <label for="pregnancies">Số lần mang thai:</label>
+                        <input
+                            type="number"
+                            id="pregnancies"
+                            name="pregnancies"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="glucose">Đường huyết (mg/dL):</label>
+                        <input
+                            type="number"
+                            id="glucose"
+                            name="glucose"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="blood_pressure">Huyết áp (mm Hg):</label>
+                        <input
+                            type="number"
+                            id="blood_pressure"
+                            name="blood_pressure"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="skin_thickness"
+                            >Độ dày của da dưới cánh tay (mm):</label
+                        >
+                        <input
+                            type="number"
+                            id="skin_thickness"
+                            name="skin_thickness"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="insulin"
+                            >Nồng độ insulin trong máu (mu U/ml):</label
+                        >
+                        <input
+                            type="number"
+                            id="insulin"
+                            name="insulin"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="bmi"
+                            >Chỉ số khối cơ thể (BMI) (kg/m²):</label
+                        >
+                        <input
+                            type="number"
+                            step="0.1"
+                            id="bmi"
+                            name="bmi"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="dpf">Chức năng di truyền:</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            id="dpf"
+                            name="dpf"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="age">Tuổi của bệnh nhân (năm):</label>
+                        <input type="number" id="age" name="age" required />
+                    </div>
+                    <button type="submit">Chẩn đoán</button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document
+                .querySelector("#diagnosis-form")
+                .addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    var formData = new FormData(event.target);
+                    var progressCircle =
+                        document.getElementById("progress-circle");
+                    var progressText = document.getElementById("progress-text");
+                    var adviceBox = document.querySelector(".advice-box");
+                    var getAdviceBtn =
+                        document.getElementById("get-advice-btn");
+
+                    adviceBox.style.display = "none";
+                    adviceBox.innerHTML = "";
+                    getAdviceBtn.disabled = true;
+
+                    fetch("/diagnose", {
+                        method: "POST",
+                        body: formData,
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+
+                            let percentage = 0;
+                            let interval = setInterval(function () {
+                                if (percentage >= data.accuracy) {
+                                    clearInterval(interval);
+                                    progressText.textContent =
+                                        data.accuracy.toFixed(2) + "%";
+                                    progressCircle.style.background = `conic-gradient(#2d6a4f ${
+                                        data.accuracy * 3.6
+                                    }deg, #d3e0dc ${data.accuracy * 3.6}deg)`;
+                                } else {
+                                    percentage += 1;
+                                    progressText.textContent = percentage + "%";
+                                    progressCircle.style.background = `conic-gradient(#2d6a4f ${
+                                        percentage * 3.6
+                                    }deg, #d3e0dc ${percentage * 3.6}deg)`;
+                                }
+                            }, 15);
+                            document.querySelector(".diagnosis")?.remove();
+                            var diagnosisDiv = document.createElement("b");
+                            diagnosisDiv.className = "diagnosis";
+                            diagnosisDiv.textContent = data.diagnosis;
+                            document
+                                .querySelector(".progress-container-label")
+                                .appendChild(diagnosisDiv);
+                            getAdviceBtn.disabled = false;
+                            getAdviceBtn.onclick = function () {
+                                getAdvice(data);
+                            };
+                        })
+                        .catch((error) => {
+                            console.error("Error:", error);
+                        });
+                });
+
+            function getAdvice(data) {
+                var adviceBox = document.querySelector(".advice-box");
+                adviceBox.innerHTML = '<span class="loading-spinner"></span>';
+                adviceBox.style.display = "block";
+
+                fetch("/get_advice", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.error) {
+                            adviceBox.innerHTML =
+                                "ERROR 404: HỆ THỐNG ĐANG LỖI XIN HÃY THỬ LẠI SAU!";
+                            return;
+                        }
+
+                        displayAdvice(adviceBox, data.advice);
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                        adviceBox.innerHTML =
+                            "ERROR 404: HỆ THỐNG ĐANG LỖI XIN HÃY THỬ LẠI SAU!";
+                    });
+            }
+
+            function displayAdvice(element, adviceText) {
+                adviceText = adviceText.replace(/(<br>)+/g, "<br>").trim();
+                adviceText = adviceText.replace(/<br><br>/g, "<br>");
+                adviceText = adviceText.replace(/\*/g, "");
+
+                element.innerHTML = `
+                <h3>Đánh giá và lời khuyên:</h3>
+                ${adviceText}
+            `;
+            }
+        </script>
+    </body>
+</html>
